@@ -93,7 +93,7 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = io.connect("http://localhost:8000");
+    const newSocket = io.connect("https://boggle-live-backend.azurewebsites.net/");
 
     setSocket(newSocket);
 
