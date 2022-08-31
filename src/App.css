@@ -1,0 +1,48 @@
+* {
+  margin: 0;
+}
+
+.container {
+  display: grid;
+}
+
+.grid {
+  margin: 0;
+  padding: 1rem;
+  display: grid;
+  gap: 0.5rem;
+  list-style-type: none;
+}
+
+.cell {
+  display: flex;
+  width: 5rem;
+  height: 5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.cell:hover {
+  cursor: pointer;
+}
+
+.letter {
+  font-weight: 500;
+  font-size: 70px;
+}
+
+.leftMargin {
+  margin-left: 25vw;
+}
+
+.rightMargin {
+  margin-left: 75vw;
+}
+
+.leftMargin2 {
+  margin-left: 15vw;
+}
+
+.rightMargin2 {
+  margin-left: 65vw;
+}
