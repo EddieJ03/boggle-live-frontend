@@ -93,7 +93,7 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = io.connect("https://boggle-live-backend.azurewebsites.net/");
+    const newSocket = io.connect("https://boggle-live-backend.onrender.com/");
 
     setSocket(newSocket);
 
