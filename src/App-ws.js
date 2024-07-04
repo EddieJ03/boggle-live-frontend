@@ -1,17 +1,16 @@
-import io from 'socket.io-client'
-import { useState, useEffect } from 'react'
-import ToastContainer from 'react-bootstrap/ToastContainer'
-import Toast from 'react-bootstrap/Toast'
-import Board from './Board.js'
+import { useState, useEffect } from 'react';
+import ToastContainer from 'react-bootstrap/ToastContainer';
+import Toast from 'react-bootstrap/Toast';
+import Board from './Board.js';
 import './App.css';
 
-const NUM  = 4;
+const NUM = 4;
 
 let playerNumber;
 let validWords = [], playerWords = [], oppWords = [];
 
 function App() {
-  // initialize socket
+  // initialize WebSocket
   const [socket, setSocket] = useState(null);
 
   // 0 is home, 1 is playing, 2 is game results, 3 is disconnected
@@ -77,90 +76,101 @@ function App() {
     if (state === 1 && turn) {
       if (playerTimeLeft === 0) {
         setPlayerTimeLeft(15);
-        socket.emit('submitWord', {word: '', score: playerScore});
+        socket.send(JSON.stringify({ type: 'submitWord', word: '', score: playerScore }));
         setTurn(false);
         clear();
       }
 
       const intervalId = setInterval(() => {
-        setPlayerTimeLeft(playerTimeLeft - 1)
+        setPlayerTimeLeft(playerTimeLeft - 1);
       }, 1000);
 
       // clear interval on re-render to avoid memory leaks
       return () => clearInterval(intervalId);
     }
-  }, [playerTimeLeft, turn, state])
+  }, [playerTimeLeft, turn, state, socket, playerScore]);
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = io.connect("https://boggle-live-backend.onrender.com/");
+    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
+
+    newSocket.onopen = () => {
+      console.log("Connected to WebSocket server");
+    };
+
+    newSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      switch (data.type) {
+        case 'gameCode':
+          setGameCode(data.roomName);
+          setWaiting(true);
+          break;
+        case 'start':
+          setState(1);
+          setMinute(data.countdown[0]);
+          setSecond(data.countdown[1]);
+          setShowA(false);
+          setEnterCode('');
+          setWaiting(false);
+          validWords = data.gameInfo.allValidWords;
+          setMaxPossibleScore(data.gameInfo.totalScore);
+          setCharacters(data.gameInfo.allCharacters);
+          break;
+        case 'time':
+          setMinute(data.time[0]);
+          setSecond(data.time[1]);
+          break;
+        case 'endgame':
+          setState(2);
+          if (playerNumber === 1) {
+            setOppScore(data.player2);
+          } else {
+            setOppScore(data.player1);
+          }
+          break;
+        case 'init':
+          if (data.number === 1) {
+            setTurn(true);
+          }
+          break;
+        case 'switch':
+          setTurn(playerNumber === data.player);
+          if (data.word.length >= 3) {
+            oppWords = [...oppWords, data.word];
+          }
+          break;
+        case 'disconnected':
+          emptyEverything();
+          setState(3);
+          break;
+        default:
+          break;
+      }
+    };
+
+    newSocket.onclose = () => {
+      console.log("Disconnected from WebSocket server");
+    };
 
     setSocket(newSocket);
 
-    newSocket.on('gameCode', (data) => {
-      setGameCode(data);
-      setWaiting(true);
-    });
-
-    newSocket.on('start', (data) => {
-      setState(1);
-      setMinute(data.countdown[0]);
-      setSecond(data.countdown[1]);
-      setShowA(false);
-      setEnterCode('');
-      setWaiting(false);
-      validWords = data.gameInfo.allValidWords;
-      setMaxPossibleScore(data.gameInfo.totalScore);
-      setCharacters(data.gameInfo.allCharacters);
-    });
-
-    newSocket.on('time', (data) => {
-      setMinute(data[0]);
-      setSecond(data[1]);
-    });
-
-    newSocket.on('endgame', data => {
-      setState(2);
-      if(playerNumber === 1) {
-        setOppScore(data.player2);
-      } else {
-        setOppScore(data.player1);
-      }
-    });
-
-    newSocket.on('init', data => {
-      if(data === 1) {
-        setTurn(true);
-      }
-    });
-
-    newSocket.on('switch', data => {
-      setTurn(playerNumber === data.player);
-      if(data.word.length >= 3) {
-        oppWords = [...oppWords, data.word];
-      }
-    });
-
-    newSocket.on('disconnected', () => {
-      emptyEverything();
-      setState(3);
-    });
-
-    return () => newSocket.close();
+    return () => {
+      newSocket.close();
+    };
   }, []);
 
   function newGame() {
     emptyEverything();
     setTurn(true);
     playerNumber = 1;
-    socket.emit('newGame');
+    socket.send(JSON.stringify({ type: 'newGame' }));
   }
 
   function joinGame() {
     setTurn(false);
     emptyEverything();
     playerNumber = 2;
-    socket.emit('joinGame', enterCode);
+    socket.send(JSON.stringify({ type: 'joinGame', roomName: enterCode }));
   }
 
   function nearProperly() {
@@ -214,7 +224,7 @@ function App() {
       score += 11;
     }
 
-    socket.emit('submitWord', {word: word, score: score});
+    socket.send(JSON.stringify({ type: 'submitWord', word: word, score: score }));
 
     playerWords = [...playerWords, word];
     setPlayerScore(score);
