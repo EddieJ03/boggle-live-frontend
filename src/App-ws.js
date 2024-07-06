@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import ToastContainer from 'react-bootstrap/ToastContainer';
 import Toast from 'react-bootstrap/Toast';
+import Spinner from 'react-bootstrap/Spinner';
 import Board from './Board.js';
 import './App.css';
 
@@ -13,12 +14,13 @@ function App() {
   // initialize WebSocket
   const [socket, setSocket] = useState(null);
 
+  // did we actually connect to the websocket yet?
+  const [socketConnected, setSocketConnected] = useState(false);
+
   // 0 is home, 1 is playing, 2 is game results, 3 is disconnected
   const [state, setState] = useState(0);
 
   const [gameCode, setGameCode] = useState('');
-  const [minute, setMinute] = useState(-1);
-  const [second, setSecond] = useState(-1);
   const [enterCode, setEnterCode] = useState('');
 
   // track player turn
@@ -92,14 +94,16 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
+    const newSocket = new WebSocket("ws://localhost:5000");
 
     newSocket.onopen = () => {
+      setSocketConnected(true);
       console.log("Connected to WebSocket server");
     };
 
     newSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
+
       switch (data.type) {
         case 'gameCode':
           setGameCode(data.roomName);
@@ -107,18 +111,12 @@ function App() {
           break;
         case 'start':
           setState(1);
-          setMinute(data.countdown[0]);
-          setSecond(data.countdown[1]);
           setShowA(false);
           setEnterCode('');
           setWaiting(false);
-          validWords = data.gameInfo.allValidWords;
-          setMaxPossibleScore(data.gameInfo.totalScore);
-          setCharacters(data.gameInfo.allCharacters);
-          break;
-        case 'time':
-          setMinute(data.time[0]);
-          setSecond(data.time[1]);
+          validWords = data.gameInfo.AllValidWords;
+          setMaxPossibleScore(data.gameInfo.TotalScore);
+          setCharacters(data.gameInfo.AllCharacters);
           break;
         case 'endgame':
           setState(2);
@@ -134,6 +132,7 @@ function App() {
           }
           break;
         case 'switch':
+          console.log(data)
           setTurn(playerNumber === data.player);
           if (data.word.length >= 3) {
             oppWords = [...oppWords, data.word];
@@ -257,8 +256,6 @@ function App() {
         state === 1 ? 
         <>
           <div className="d-flex flex-column justify-content-center align-items-center">
-              <h1>{minute}:{second <= 9 ? `0${second}` : second}</h1>
-
               <h1 className="mb-1">{turn ? `${playerTimeLeft}` : ''}</h1>
 
               <h4 style={{float: 'right', marginTop: '5px'}}>
@@ -335,32 +332,41 @@ function App() {
         )
       ) 
       : 
+      socketConnected ?
       <div id="initialScreen" className="d-flex flex-column align-items-center justify-content-around vh-100">
-          <div className="d-flex flex-column align-items-center justify-content-around" style={{height: '300px'}}>
-            <h1>Boggle Live</h1>
-            <button
-              className="btn btn-success"
-              onClick={newGame}
-            >
-              Create New Game
-            </button>
-            {
-              waiting ? <>Here is the code: {gameCode}. Waiting for other player!</>
-              : 
-              <>
-                <div>OR</div>
-                <div className="form-group">
-                  <input type="text" placeholder="Enter Game Code" value={enterCode} onChange={(e) => setEnterCode(e.target.value)}/>
-                </div>
-                <button
-                  className="btn btn-success"
-                  onClick={joinGame}
-                >
-                  Join Game
-                </button>
-              </>
-            }
+        <div className="d-flex flex-column align-items-center justify-content-around" style={{height: '300px'}}>
+          <h1>Boggle Live</h1>
+          <button
+            className="btn btn-success"
+            onClick={newGame}
+          >
+            Create New Game
+          </button>
+          {
+            waiting ? <>Here is the code: {gameCode}. Waiting for other player!</>
+            : 
+            <>
+              <div>OR</div>
+              <div className="form-group">
+                <input type="text" placeholder="Enter Game Code" value={enterCode} onChange={(e) => setEnterCode(e.target.value)}/>
+              </div>
+              <button
+                className="btn btn-success"
+                onClick={joinGame}
+              >
+                Join Game
+              </button>
+            </>
+          }
+         <h5 style={{textAlign: 'center'}}>The first person unable to find a word 3 turns in a row loses!</h5>
         </div>
+      </div>
+      :
+      <div className="d-flex flex-column align-items-center justify-content-center vh-100">
+        <h5 style={{textAlign: 'center'}}>Server is starting up give it a moment . . .</h5>
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </Spinner>
       </div>
   );
 }
