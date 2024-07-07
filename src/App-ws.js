@@ -27,7 +27,10 @@ function App() {
   const [turn, setTurn] = useState(false);
   
   // waiting for other player
-  const [waiting, setWaiting] = useState(false);
+  // 0 for no waiting
+  // 1 for new game
+  // 2 for random
+  const [waiting, setWaiting] = useState(0);
 
   // characters on board
   const [characters, setCharacters] = useState([]);
@@ -94,7 +97,7 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
+    const newSocket = new WebSocket("ws://localhost:5000");
 
     newSocket.onopen = () => {
       setSocketConnected(true);
@@ -107,13 +110,13 @@ function App() {
       switch (data.type) {
         case 'gameCode':
           setGameCode(data.roomName);
-          setWaiting(true);
+          setWaiting(1);
           break;
         case 'start':
           setState(1);
           setShowA(false);
           setEnterCode('');
-          setWaiting(false);
+          setWaiting(0);
           validWords = data.gameInfo.AllValidWords;
           setMaxPossibleScore(data.gameInfo.TotalScore);
           setCharacters(data.gameInfo.AllCharacters);
@@ -127,12 +130,15 @@ function App() {
           }
           break;
         case 'init':
+          // initialize player numbers
+          playerNumber = data.Number
+
           if (data.number === 1) {
             setTurn(true);
           }
+
           break;
         case 'switch':
-          console.log(data)
           setTurn(playerNumber === data.player);
           if (data.word.length >= 3) {
             oppWords = [...oppWords, data.word];
@@ -159,17 +165,22 @@ function App() {
   }, []);
 
   function newGame() {
-    emptyEverything();
     setTurn(true);
-    playerNumber = 1;
+    emptyEverything();
     socket.send(JSON.stringify({ type: 'newGame' }));
   }
 
   function joinGame() {
     setTurn(false);
     emptyEverything();
-    playerNumber = 2;
     socket.send(JSON.stringify({ type: 'joinGame', roomName: enterCode }));
+  }
+
+  function randomGame() {
+    setTurn(false);
+    emptyEverything();
+    socket.send(JSON.stringify({ type: 'randomGame' }));
+    setWaiting(2);
   }
 
   function nearProperly() {
@@ -334,8 +345,10 @@ function App() {
       : 
       socketConnected ?
       <div id="initialScreen" className="d-flex flex-column align-items-center justify-content-around vh-100">
-        <div className="d-flex flex-column align-items-center justify-content-around" style={{height: '300px'}}>
+        <div className="d-flex flex-column align-items-center justify-content-around" style={{height: '350px'}}>
           <h1>Boggle Live</h1>
+          <h5 style={{textAlign: 'center', width: '50vw'}}>The game ends when someone cannot find a word 3 turns in a row!</h5>
+          <br/>
           <button
             className="btn btn-success"
             onClick={newGame}
@@ -343,9 +356,15 @@ function App() {
             Create New Game
           </button>
           {
-            waiting ? <>Here is the code: {gameCode}. Waiting for other player!</>
-            : 
-            <>
+            waiting === 1 
+            ? 
+            <>Here is the code: {gameCode}. Waiting for other player!</>
+            : (
+              waiting === 2 
+              ? 
+              <>Waiting to match with a player . . .</>
+              :
+              <>
               <div>OR</div>
               <div className="form-group">
                 <input type="text" placeholder="Enter Game Code" value={enterCode} onChange={(e) => setEnterCode(e.target.value)}/>
@@ -356,9 +375,16 @@ function App() {
               >
                 Join Game
               </button>
+              <div>OR</div>
+              <button
+                className="btn btn-success"
+                onClick={randomGame}
+              >
+                Random Match!
+              </button>
             </>
+            )
           }
-         <h5 style={{textAlign: 'center'}}>The first person unable to find a word 3 turns in a row loses!</h5>
         </div>
       </div>
       :
