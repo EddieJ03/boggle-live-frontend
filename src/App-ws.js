@@ -6,8 +6,7 @@ import Board from './Board.js';
 import './App.css';
 
 const NUM = 4;
-
-let playerNumber;
+let playerNumber = 0;
 let validWords = [], playerWords = [], oppWords = [];
 
 function App() {
@@ -135,7 +134,7 @@ function App() {
           break;
         case 'init':
           // initialize player numbers
-          playerNumber = data.Number
+          playerNumber = data.number
 
           if (data.number === 1) {
             setTurn(true);
