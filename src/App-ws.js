@@ -97,7 +97,7 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
+    const newSocket = new WebSocket("ws://localhost:5000");
 
     newSocket.onopen = () => {
       setSocketConnected(true);
@@ -108,6 +108,10 @@ function App() {
       const data = JSON.parse(event.data);
 
       switch (data.type) {
+        case 'randomWaiting':
+          setGameCode(data.roomName);
+          setWaiting(2);
+          break;
         case 'gameCode':
           setGameCode(data.roomName);
           setWaiting(1);
@@ -180,7 +184,6 @@ function App() {
     setTurn(false);
     emptyEverything();
     socket.send(JSON.stringify({ type: 'randomGame' }));
-    setWaiting(2);
   }
 
   function nearProperly() {
@@ -349,12 +352,6 @@ function App() {
           <h1>Boggle Live</h1>
           <h5 style={{textAlign: 'center', width: '50vw'}}>The game ends when someone cannot find a word 3 turns in a row!</h5>
           <br/>
-          <button
-            className="btn btn-success"
-            onClick={newGame}
-          >
-            Create New Game
-          </button>
           {
             waiting === 1 
             ? 
@@ -365,6 +362,12 @@ function App() {
               <>Waiting to match with a player . . .</>
               :
               <>
+            <button
+              className="btn btn-success"
+              onClick={newGame}
+            >
+              Create New Game
+            </button>
               <div>OR</div>
               <div className="form-group">
                 <input type="text" placeholder="Enter Game Code" value={enterCode} onChange={(e) => setEnterCode(e.target.value)}/>
