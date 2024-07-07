@@ -97,7 +97,7 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = new WebSocket("ws://localhost:5000");
+    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
 
     newSocket.onopen = () => {
       setSocketConnected(true);
