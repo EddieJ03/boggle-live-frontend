@@ -6,6 +6,7 @@ import Board from './Board.js';
 import './App.css';
 
 const NUM = 4;
+const PLAYER_TIME_LEFT = 15;
 let playerNumber = 0;
 let validWords = [], playerWords = [], oppWords = [];
 
@@ -47,7 +48,7 @@ function App() {
   const [oppScore, setOppScore] = useState(0);
 
   // player independent timer - 15s
-  const [playerTimeLeft, setPlayerTimeLeft] = useState(15);
+  const [playerTimeLeft, setPlayerTimeLeft] = useState(PLAYER_TIME_LEFT);
 
   // clicked cells on board
   const [booleanMarked, setBooleanMarked] = useState(newFalse());
@@ -79,7 +80,7 @@ function App() {
   useEffect(() => {
     if (state === 1 && turn) {
       if (playerTimeLeft === 0) {
-        setPlayerTimeLeft(15);
+        setPlayerTimeLeft(PLAYER_TIME_LEFT);
         socket.send(JSON.stringify({ type: 'submitWord', word: '', score: playerScore }));
         setTurn(false);
         clear();
@@ -96,75 +97,75 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
+      const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
 
-    newSocket.onopen = () => {
-      setSocketConnected(true);
-      console.log("Connected to WebSocket server");
-    };
+      newSocket.onopen = () => {
+        setSocketConnected(true);
+        console.log("Connected to WebSocket server");
+      };
 
-    newSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      newSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
 
-      switch (data.type) {
-        case 'randomWaiting':
-          setGameCode(data.roomName);
-          setWaiting(2);
-          break;
-        case 'gameCode':
-          setGameCode(data.roomName);
-          setWaiting(1);
-          break;
-        case 'start':
-          setState(1);
-          setShowA(false);
-          setEnterCode('');
-          setWaiting(0);
-          validWords = data.gameInfo.AllValidWords;
-          setMaxPossibleScore(data.gameInfo.TotalScore);
-          setCharacters(data.gameInfo.AllCharacters);
-          break;
-        case 'endgame':
-          setState(2);
-          if (playerNumber === 1) {
-            setOppScore(data.player2);
-          } else {
-            setOppScore(data.player1);
-          }
-          break;
-        case 'init':
-          // initialize player numbers
-          playerNumber = data.number
+        switch (data.type) {
+          case 'randomWaiting':
+            setGameCode(data.roomName);
+            setWaiting(2);
+            break;
+          case 'gameCode':
+            setGameCode(data.roomName);
+            setWaiting(1);
+            break;
+          case 'start':
+            setState(1);
+            setShowA(false);
+            setEnterCode('');
+            setWaiting(0);
+            validWords = data.gameInfo.AllValidWords;
+            setMaxPossibleScore(data.gameInfo.TotalScore);
+            setCharacters(data.gameInfo.AllCharacters);
+            break;
+          case 'endgame':
+            setState(2);
+            if (playerNumber === 1) {
+              setOppScore(data.player2);
+            } else {
+              setOppScore(data.player1);
+            }
+            break;
+          case 'init':
+            // initialize player numbers
+            playerNumber = data.number
 
-          if (data.number === 1) {
-            setTurn(true);
-          }
+            if (data.number === 1) {
+              setTurn(true);
+            }
 
-          break;
-        case 'switch':
-          setTurn(playerNumber === data.player);
-          if (data.word.length >= 3) {
-            oppWords = [...oppWords, data.word];
-          }
-          break;
-        case 'disconnected':
-          emptyEverything();
-          setState(3);
-          break;
-        default:
-          break;
-      }
-    };
+            break;
+          case 'switch':
+            setTurn(playerNumber === data.player);
+            if (data.word.length >= 3) {
+              oppWords = [...oppWords, data.word];
+            }
+            break;
+          case 'disconnected':
+            emptyEverything();
+            setState(3);
+            break;
+          default:
+            break;
+        }
+      };
 
-    newSocket.onclose = () => {
-      console.log("Disconnected from WebSocket server");
-    };
+      newSocket.onclose = () => {
+        console.log("Disconnected from WebSocket server");
+      };
 
-    setSocket(newSocket);
+      setSocket(newSocket);
 
-    return () => {
-      newSocket.close();
-    };
+      return () => {
+        newSocket.close();
+      };
   }, []);
 
   function newGame() {
@@ -240,7 +241,7 @@ function App() {
 
     playerWords = [...playerWords, word];
     setPlayerScore(score);
-    setPlayerTimeLeft(15);
+    setPlayerTimeLeft(PLAYER_TIME_LEFT);
     setTurn(false);
     clear();
   }
@@ -260,7 +261,7 @@ function App() {
     setMaxPossibleScore(0);
     setPlayerScore(0);
     playerNumber = 0;
-    setPlayerTimeLeft(15);
+    setPlayerTimeLeft(PLAYER_TIME_LEFT);
   }
 
   return (
