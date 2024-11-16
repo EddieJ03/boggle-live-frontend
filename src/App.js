@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import ToastContainer from 'react-bootstrap/ToastContainer';
 import Toast from 'react-bootstrap/Toast';
 import Spinner from 'react-bootstrap/Spinner';
+import { Container, Card, Button, Form, InputGroup } from 'react-bootstrap';
+import { PersonPlus, Dice6Fill, Plus } from 'react-bootstrap-icons';
 import Board from './Board.js';
 import './App.css';
 
@@ -97,7 +99,7 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-      const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
+      const newSocket = new WebSocket("ws://localhost:5000");
 
       newSocket.onopen = () => {
         setSocketConnected(true);
@@ -347,49 +349,92 @@ function App() {
       ) 
       : 
       socketConnected ?
-      <div id="initialScreen" className="d-flex flex-column align-items-center justify-content-around vh-100">
-        <div className="d-flex flex-column align-items-center justify-content-around" style={{height: '350px'}}>
-          <h1>Boggle Live</h1>
-          <h5 style={{textAlign: 'center', width: '50vw'}}>The game ends when someone cannot find a word 3 turns in a row!</h5>
-          <br/>
-          {
-            waiting === 1 
-            ? 
-            <>Here is the code: {gameCode}. Waiting for other player!</>
-            : (
-              waiting === 2 
-              ? 
-              <>Waiting to match with a player . . .</>
-              :
-              <>
-            <button
-              className="btn btn-success"
-              onClick={newGame}
-            >
-              Create New Game
-            </button>
-              <div>OR</div>
-              <div className="form-group">
-                <input type="text" placeholder="Enter Game Code" value={enterCode} onChange={(e) => setEnterCode(e.target.value)}/>
+      <Container className="d-flex align-items-center justify-content-center min-vh-100">
+        <Card className="shadow-lg" style={{ maxWidth: '450px', width: '100%' }}>
+          <Card.Body className="p-5">
+            {/* Title Section */}
+            <div className="text-center mb-4">
+              <h1 className="display-4 mb-3" style={{ color: '#2C3E50' }}>Boggle Live</h1>
+              <p className="text-muted mb-4">
+                The game ends when someone cannot find a word 3 turns in a row!
+              </p>
+            </div>
+
+            {waiting === 1 ? (
+              // Waiting for player screen
+              <div className="text-center">
+                <h5 className="mb-3">Game Code: <span className="text-success">{gameCode}</span></h5>
+                <div className="d-flex align-items-center justify-content-center">
+                  <Spinner animation="border" variant="success" className="me-2" />
+                  <span>Waiting for other player...</span>
+                </div>
               </div>
-              <button
-                className="btn btn-success"
-                onClick={joinGame}
-              >
-                Join Game
-              </button>
-              <div>OR</div>
-              <button
-                className="btn btn-success"
-                onClick={randomGame}
-              >
-                Random Match!
-              </button>
-            </>
-            )
-          }
-        </div>
-      </div>
+            ) : waiting === 2 ? (
+              // Random matchmaking screen
+              <div className="text-center">
+                <Spinner animation="border" variant="primary" className="mb-3" />
+                <h5>Looking for an opponent...</h5>
+              </div>
+            ) : (
+              // Main menu options
+              <>
+                <Button 
+                  variant="success" 
+                  size="lg" 
+                  className="w-100 mb-3 d-flex align-items-center justify-content-center"
+                  onClick={newGame}
+                >
+                  <Plus className="me-2" size={20} />
+                  Create New Game
+                </Button>
+
+                <div className="position-relative my-4">
+                  <hr className="text-muted" />
+                  <span className="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted">
+                    OR
+                  </span>
+                </div>
+
+                <Form className="mb-3">
+                  <InputGroup className="mb-3">
+                    <Form.Control
+                      size="lg"
+                      placeholder="Enter Game Code"
+                      value={enterCode}
+                      onChange={(e) => setEnterCode(e.target.value)}
+                      style={{ borderRight: 'none' }}
+                    />
+                    <Button 
+                      variant="outline-success" 
+                      onClick={joinGame}
+                      className="d-flex align-items-center"
+                    >
+                      <PersonPlus size={20} />
+                    </Button>
+                  </InputGroup>
+                </Form>
+
+                <div className="position-relative my-4">
+                  <hr className="text-muted" />
+                  <span className="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted">
+                    OR
+                  </span>
+                </div>
+
+                <Button 
+                  variant="primary" 
+                  size="lg" 
+                  className="w-100 d-flex align-items-center justify-content-center"
+                  onClick={randomGame}
+                >
+                  <Dice6Fill className="me-2" size={20} />
+                  Random Match!
+                </Button>
+              </>
+            )}
+          </Card.Body>
+        </Card>
+      </Container>
       :
       <div className="d-flex flex-column align-items-center justify-content-center vh-100">
         <h5 style={{textAlign: 'center'}}>Server is starting up give it a moment . . .</h5>
