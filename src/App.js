@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import ToastContainer from 'react-bootstrap/ToastContainer';
 import Toast from 'react-bootstrap/Toast';
 import Spinner from 'react-bootstrap/Spinner';
-import { Container, Card, Button, Form, InputGroup } from 'react-bootstrap';
+import { Container, Card, Button, Form, InputGroup, Col, Row } from 'react-bootstrap';
 import { PersonPlus, Dice6Fill, Plus } from 'react-bootstrap-icons';
 import Board from './Board.js';
 import './App.css';
@@ -330,20 +330,54 @@ function App() {
           </> 
           : 
           <>
-              <div className="d-flex flex-column vh-100 align-items-center justify-content-center">
-                <h2 style={{textAlign: 'center'}}>{playerScore > oppScore ? `You Win!` : (playerScore < oppScore ? `You Lose` : "It is a tie!")}</h2> 
-                    <div className="d-flex justify-content-center align-items-center flex-column">
-                      <div className="d-flex align-content-center flex-wrap" style={{height: '200px', width: '650px', border: '5px solid black', overflowY: 'scroll'}}>
-                          {validWords.map((word, val) => 
-                          <p key={val} style={{margin: '4px', color: playerWords.includes(word) ? "green" : (oppWords.includes(word) ? "red" : "black")}}>{word.toUpperCase()}</p>)}
-                      </div>
-                      <h3 style={{textAlign: 'center', paddingTop: '5px'}}>
-                      <span style={{color: 'black'}}>BLACK</span> means not found, <span style={{color: 'red'}}>RED</span> means words opponent found, and <span style={{color: 'green'}}>GREEN</span> means words you found</h3>
-                    </div>
-                  <button type="button" className={`btn btn-secondary`} onClick={() => setState(0)}>
-                    Home
-                  </button>
-              </div>
+            <Container className="min-vh-100 d-flex flex-column justify-content-center align-items-center py-4">
+              <Card className="shadow-lg w-100" style={{ maxWidth: '700px' }}>
+                <Card.Header className="text-center bg-primary text-white">
+                  <h2 className="mb-0">{playerScore > oppScore ? `You Win!` : (playerScore < oppScore ? `You Lose` : "It is a tie!")}</h2>
+                </Card.Header>
+                
+                <Card.Body>
+                  <div 
+                    className="border rounded p-3 mb-4" 
+                    style={{
+                      height: '250px',
+                      overflowY: 'auto',
+                      backgroundColor: '#fafafa'
+                    }}
+                  >
+                    <Row className="g-2">
+                      {validWords.map((word, index) => (
+                        <Col key={index} xs="auto">
+                          <span className={`px-2 py-1 d-inline-block`} 
+                                style={{ fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '0.5px', color: `${playerWords.includes(word) ? "green" : (oppWords.includes(word) ? "red" : "black")}` }}>
+                            {word.toUpperCase()}
+                          </span>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+
+                  <div className="text-center mb-4">
+                    <p className="mb-2">
+                      <span className="text-dark fw-bold">⬤</span> Not Found
+                      <span className="text-danger fw-bold ms-3">⬤</span> Opponent Found
+                      <span className="text-success fw-bold ms-3">⬤</span> You Found
+                    </p>
+                  </div>
+
+                  <div className="text-center">
+                    <Button 
+                      variant="primary" 
+                      size="lg"
+                      onClick={() => setState(0)}
+                      className="px-4"
+                    >
+                      Return Home
+                    </Button>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Container>
           </>
         )
       ) 
