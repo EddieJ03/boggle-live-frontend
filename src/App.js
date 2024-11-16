@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
-import ToastContainer from 'react-bootstrap/ToastContainer';
-import Toast from 'react-bootstrap/Toast';
-import Spinner from 'react-bootstrap/Spinner';
-import { Container, Card, Button, Form, InputGroup, Col, Row } from 'react-bootstrap';
-import { PersonPlus, Dice6Fill, Plus } from 'react-bootstrap-icons';
-import Board from './Board.js';
-import './App.css';
+import { useState, useEffect } from "react";
+import ToastContainer from "react-bootstrap/ToastContainer";
+import Toast from "react-bootstrap/Toast";
+import { Container, Card, Button, Col, Row } from "react-bootstrap";
+import Board from "./Board.js";
+import ServerLoading from "./ServerLoadingComponent.js";
+import MainMenu from "./MainMenuComponent.js";
+import "./App.css";
 
 const NUM = 4;
 const PLAYER_TIME_LEFT = 15;
 let playerNumber = 0;
-let validWords = [], playerWords = [], oppWords = [];
+let validWords = [],
+  playerWords = [],
+  oppWords = [];
 
 function App() {
   // initialize WebSocket
@@ -22,12 +24,12 @@ function App() {
   // 0 is home, 1 is playing, 2 is game results, 3 is disconnected
   const [state, setState] = useState(0);
 
-  const [gameCode, setGameCode] = useState('');
-  const [enterCode, setEnterCode] = useState('');
+  const [gameCode, setGameCode] = useState("");
+  const [enterCode, setEnterCode] = useState("");
 
   // track player turn
   const [turn, setTurn] = useState(false);
-  
+
   // waiting for other player
   // 0 for no waiting
   // 1 for new game
@@ -38,7 +40,7 @@ function App() {
   const [characters, setCharacters] = useState([]);
 
   // word player enters
-  const [word, setWord] = useState('');
+  const [word, setWord] = useState("");
 
   // max possible score
   const [maxPossibleScore, setMaxPossibleScore] = useState(0);
@@ -65,12 +67,12 @@ function App() {
   function newFalse() {
     let y = Array(NUM);
 
-    for (let i = 0; i < NUM ; i++) {
-      y[i] = new Array(NUM );
+    for (let i = 0; i < NUM; i++) {
+      y[i] = new Array(NUM);
     }
 
-    for(let i = 0; i < NUM ; i++) {
-      for(let j = 0; j < NUM ; j++) {
+    for (let i = 0; i < NUM; i++) {
+      for (let j = 0; j < NUM; j++) {
         y[i][j] = false;
       }
     }
@@ -83,7 +85,9 @@ function App() {
     if (state === 1 && turn) {
       if (playerTimeLeft === 0) {
         setPlayerTimeLeft(PLAYER_TIME_LEFT);
-        socket.send(JSON.stringify({ type: 'submitWord', word: '', score: playerScore }));
+        socket.send(
+          JSON.stringify({ type: "submitWord", word: "", score: playerScore })
+        );
         setTurn(false);
         clear();
       }
@@ -99,103 +103,105 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-      const newSocket = new WebSocket("ws://localhost:5000");
+    const newSocket = new WebSocket("ws://localhost:5000");
 
-      newSocket.onopen = () => {
-        setSocketConnected(true);
-        console.log("Connected to WebSocket server");
-      };
+    newSocket.onopen = () => {
+      setSocketConnected(true);
+      console.log("Connected to WebSocket server");
+    };
 
-      newSocket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+    newSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
 
-        switch (data.type) {
-          case 'randomWaiting':
-            setGameCode(data.roomName);
-            setWaiting(2);
-            break;
-          case 'gameCode':
-            setGameCode(data.roomName);
-            setWaiting(1);
-            break;
-          case 'start':
-            setState(1);
-            setShowA(false);
-            setEnterCode('');
-            setWaiting(0);
-            validWords = data.gameInfo.AllValidWords;
-            setMaxPossibleScore(data.gameInfo.TotalScore);
-            setCharacters(data.gameInfo.AllCharacters);
-            break;
-          case 'endgame':
-            setState(2);
-            if (playerNumber === 1) {
-              setOppScore(data.player2);
-            } else {
-              setOppScore(data.player1);
-            }
-            break;
-          case 'init':
-            // initialize player numbers
-            playerNumber = data.number
+      switch (data.type) {
+        case "randomWaiting":
+          setGameCode(data.roomName);
+          setWaiting(2);
+          break;
+        case "gameCode":
+          setGameCode(data.roomName);
+          setWaiting(1);
+          break;
+        case "start":
+          setState(1);
+          setShowA(false);
+          setEnterCode("");
+          setWaiting(0);
+          validWords = data.gameInfo.AllValidWords;
+          setMaxPossibleScore(data.gameInfo.TotalScore);
+          setCharacters(data.gameInfo.AllCharacters);
+          break;
+        case "endgame":
+          setState(2);
+          if (playerNumber === 1) {
+            setOppScore(data.player2);
+          } else {
+            setOppScore(data.player1);
+          }
+          break;
+        case "init":
+          // initialize player numbers
+          playerNumber = data.number;
 
-            if (data.number === 1) {
-              setTurn(true);
-            }
+          if (data.number === 1) {
+            setTurn(true);
+          }
 
-            break;
-          case 'switch':
-            setTurn(playerNumber === data.player);
-            if (data.word.length >= 3) {
-              oppWords = [...oppWords, data.word];
-            }
-            break;
-          case 'disconnected':
-            emptyEverything();
-            setState(3);
-            break;
-          default:
-            break;
-        }
-      };
+          break;
+        case "switch":
+          setTurn(playerNumber === data.player);
+          if (data.word.length >= 3) {
+            oppWords = [...oppWords, data.word];
+          }
+          break;
+        case "disconnected":
+          emptyEverything();
+          setState(3);
+          break;
+        default:
+          break;
+      }
+    };
 
-      newSocket.onclose = () => {
-        console.log("Disconnected from WebSocket server");
-      };
+    newSocket.onclose = () => {
+      console.log("Disconnected from WebSocket server");
+    };
 
-      setSocket(newSocket);
+    setSocket(newSocket);
 
-      return () => {
-        newSocket.close();
-      };
+    return () => {
+      newSocket.close();
+    };
   }, []);
 
   function newGame() {
     setTurn(true);
     emptyEverything();
-    socket.send(JSON.stringify({ type: 'newGame' }));
+    socket.send(JSON.stringify({ type: "newGame" }));
   }
 
   function joinGame() {
     setTurn(false);
     emptyEverything();
-    socket.send(JSON.stringify({ type: 'joinGame', roomName: enterCode }));
+    socket.send(JSON.stringify({ type: "joinGame", roomName: enterCode }));
   }
 
   function randomGame() {
     setTurn(false);
     emptyEverything();
-    socket.send(JSON.stringify({ type: 'randomGame' }));
+    socket.send(JSON.stringify({ type: "randomGame" }));
   }
 
   function nearProperly() {
     for (let i = 1; i < pairsMarked.length; i++) {
-      if (Math.abs(pairsMarked[i - 1][0] - pairsMarked[i][0]) > 1 ||
-         Math.abs(pairsMarked[i][1]- pairsMarked[i - 1][1]) > 1) {
+      if (
+        Math.abs(pairsMarked[i - 1][0] - pairsMarked[i][0]) > 1 ||
+        Math.abs(pairsMarked[i][1] - pairsMarked[i - 1][1]) > 1
+      ) {
         return false;
       }
     }
-    return true
+    return true;
   }
 
   function validateSelection() {
@@ -218,7 +224,7 @@ function App() {
   }
 
   function submitWord() {
-    if(!validateSelection()) {
+    if (!validateSelection()) {
       setShowA(true);
       return;
     }
@@ -227,19 +233,21 @@ function App() {
 
     let score = playerScore;
 
-    if(word.length >= 3 && word.length <= 4) {
+    if (word.length >= 3 && word.length <= 4) {
       score += 1;
-    } else if(word.length === 5) {
+    } else if (word.length === 5) {
       score += 2;
-    } else if(word.length === 6) {
+    } else if (word.length === 6) {
       score += 3;
-    } else if(word.length === 7) {
+    } else if (word.length === 7) {
       score += 5;
     } else {
       score += 11;
     }
 
-    socket.send(JSON.stringify({ type: 'submitWord', word: word, score: score }));
+    socket.send(
+      JSON.stringify({ type: "submitWord", word: word, score: score })
+    );
 
     playerWords = [...playerWords, word];
     setPlayerScore(score);
@@ -266,216 +274,178 @@ function App() {
     setPlayerTimeLeft(PLAYER_TIME_LEFT);
   }
 
-  return (
-      state !== 0 ? 
-      (
-        state === 1 ? 
-        <>
-          <div className="d-flex flex-column justify-content-center align-items-center">
-              <h1 className="mb-1">{turn ? `${playerTimeLeft}` : ''}</h1>
+  return state !== 0 ? (
+    state === 1 ? (
+      <>
+        <div className="d-flex flex-column justify-content-center align-items-center">
+          <h1 className="mb-1">{turn ? `${playerTimeLeft}` : ""}</h1>
 
-              <h4 style={{float: 'right', marginTop: '5px'}}>
-                Score: {playerScore}
-              </h4>
+          <h4 style={{ float: "right", marginTop: "5px" }}>
+            Score: {playerScore}
+          </h4>
 
-              <h4 style={{float: 'right', marginTop: '5px'}}>
-                WORD: {word}
-              </h4>
+          <h4 style={{ float: "right", marginTop: "5px" }}>WORD: {word}</h4>
 
-              <Board player={turn} characters={characters} booleanMarked={booleanMarked} setBooleanMarked={setBooleanMarked} setWord={setWord} pairsMarked={pairsMarked} setPairsMarked={setPairsMarked}/>
+          <Board
+            player={turn}
+            characters={characters}
+            booleanMarked={booleanMarked}
+            setBooleanMarked={setBooleanMarked}
+            setWord={setWord}
+            pairsMarked={pairsMarked}
+            setPairsMarked={setPairsMarked}
+          />
 
-              <div className="d-flex align-content-start flex-wrap" style={{
-                height: '200px', 
-                width: '400px', 
-                border: '5px solid black', marginBottom: '5px'}}>
-                {playerWords.map((word, val) => 
-                  <p key={val} style={{margin: '2px'}}>
-                    {word.toUpperCase()}
-                  </p>
-                )}
-              </div>
-
-              <button onClick={clear} className={`btn btn-secondary ${!turn ? 'disabled' : ''} mb-1`}>
-                Clear
-              </button>
-
-              <button type="button" className={`btn btn-secondary ${!turn ? 'disabled' : ''}`} onClick={submitWord}>
-                Select Word
-              </button>
-
-              <h4 style={{textAlign: 'center', marginTop: '15px'}}>
-                Total Possible Score: {maxPossibleScore}
-              </h4>
-          </div>
-          <ToastContainer style={{marginTop: '12vh', marginRight: '10px'}} position="top-end">
-              <Toast bg={modalText === "Good Selection!" ? "success" : "danger"} show={showA} onClose={toggleShowA} delay={1000} autohide>
-                <Toast.Header>
-                </Toast.Header>
-                <Toast.Body>
-                  <b>{modalText}</b>
-                </Toast.Body>
-              </Toast>
-          </ToastContainer>
-        </>
-        : 
-        (
-          state !== 2 ? 
-          <>
-            <div className="d-flex flex-column justify-content-center align-items-center vh-100">
-              <h2 style={{textAlign: 'center'}}>Opponent Disconnected!</h2> 
-              <button type="button" className={`btn btn-secondary`} onClick={() => setState(0)}>
-                Home
-              </button>
-            </div>
-          </> 
-          : 
-          <>
-            <Container className="min-vh-100 d-flex flex-column justify-content-center align-items-center py-4">
-              <Card className="shadow-lg w-100" style={{ maxWidth: '700px' }}>
-                <Card.Header className="text-center bg-primary text-white">
-                  <h2 className="mb-0">{playerScore > oppScore ? `You Win!` : (playerScore < oppScore ? `You Lose` : "It is a tie!")}</h2>
-                </Card.Header>
-                
-                <Card.Body>
-                  <div 
-                    className="border rounded p-3 mb-4" 
-                    style={{
-                      height: '250px',
-                      overflowY: 'auto',
-                      backgroundColor: '#fafafa'
-                    }}
-                  >
-                    <Row className="g-2">
-                      {validWords.map((word, index) => (
-                        <Col key={index} xs="auto">
-                          <span className={`px-2 py-1 d-inline-block`} 
-                                style={{ fontWeight: 'bold', fontSize: '0.9rem', letterSpacing: '0.5px', color: `${playerWords.includes(word) ? "green" : (oppWords.includes(word) ? "red" : "black")}` }}>
-                            {word.toUpperCase()}
-                          </span>
-                        </Col>
-                      ))}
-                    </Row>
-                  </div>
-
-                  <div className="text-center mb-4">
-                    <p className="mb-2">
-                      <span className="text-dark fw-bold">⬤</span> Not Found
-                      <span className="text-danger fw-bold ms-3">⬤</span> Opponent Found
-                      <span className="text-success fw-bold ms-3">⬤</span> You Found
-                    </p>
-                  </div>
-
-                  <div className="text-center">
-                    <Button 
-                      variant="primary" 
-                      size="lg"
-                      onClick={() => setState(0)}
-                      className="px-4"
-                    >
-                      Return Home
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Container>
-          </>
-        )
-      ) 
-      : 
-      socketConnected ?
-      <Container className="d-flex align-items-center justify-content-center min-vh-100">
-        <Card className="shadow-lg" style={{ maxWidth: '450px', width: '100%' }}>
-          <Card.Body className="p-5">
-            {/* Title Section */}
-            <div className="text-center mb-4">
-              <h1 className="display-4 mb-3" style={{ color: '#2C3E50' }}>Boggle Live</h1>
-              <p className="text-muted mb-4">
-                The game ends when someone cannot find a word 3 turns in a row!
+          <div
+            className="d-flex align-content-start flex-wrap"
+            style={{
+              height: "200px",
+              width: "400px",
+              border: "5px solid black",
+              marginBottom: "5px",
+            }}
+          >
+            {playerWords.map((word, val) => (
+              <p key={val} style={{ margin: "2px" }}>
+                {word.toUpperCase()}
               </p>
-            </div>
+            ))}
+          </div>
 
-            {waiting === 1 ? (
-              // Waiting for player screen
-              <div className="text-center">
-                <h5 className="mb-3">Game Code: <span className="text-success">{gameCode}</span></h5>
-                <div className="d-flex align-items-center justify-content-center">
-                  <Spinner animation="border" variant="success" className="me-2" />
-                  <span>Waiting for other player...</span>
-                </div>
+          <button
+            onClick={clear}
+            className={`btn btn-secondary ${!turn ? "disabled" : ""} mb-1`}
+          >
+            Clear
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-secondary ${!turn ? "disabled" : ""}`}
+            onClick={submitWord}
+          >
+            Select Word
+          </button>
+
+          <h4 style={{ textAlign: "center", marginTop: "15px" }}>
+            Total Possible Score: {maxPossibleScore}
+          </h4>
+        </div>
+        <ToastContainer
+          style={{ marginTop: "12vh", marginRight: "10px" }}
+          position="top-end"
+        >
+          <Toast
+            bg={modalText === "Good Selection!" ? "success" : "danger"}
+            show={showA}
+            onClose={toggleShowA}
+            delay={1000}
+            autohide
+          >
+            <Toast.Header></Toast.Header>
+            <Toast.Body>
+              <b>{modalText}</b>
+            </Toast.Body>
+          </Toast>
+        </ToastContainer>
+      </>
+    ) : state !== 2 ? (
+      <>
+        <div className="d-flex flex-column justify-content-center align-items-center vh-100">
+          <h2 style={{ textAlign: "center" }}>Opponent Disconnected!</h2>
+          <button
+            type="button"
+            className={`btn btn-secondary`}
+            onClick={() => setState(0)}
+          >
+            Home
+          </button>
+        </div>
+      </>
+    ) : (
+      <>
+        <Container className="min-vh-100 d-flex flex-column justify-content-center align-items-center py-4">
+          <Card className="shadow-lg w-100" style={{ maxWidth: "700px" }}>
+            <Card.Header className="text-center bg-primary text-white">
+              <h2 className="mb-0">
+                {playerScore > oppScore
+                  ? `You Win!`
+                  : playerScore < oppScore
+                  ? `You Lose`
+                  : "It is a tie!"}
+              </h2>
+            </Card.Header>
+
+            <Card.Body>
+              <div
+                className="border rounded p-3 mb-4"
+                style={{
+                  height: "250px",
+                  overflowY: "auto",
+                  backgroundColor: "#fafafa",
+                }}
+              >
+                <Row className="g-2">
+                  {validWords.map((word, index) => (
+                    <Col key={index} xs="auto">
+                      <span
+                        className={`px-2 py-1 d-inline-block`}
+                        style={{
+                          fontWeight: "bold",
+                          fontSize: "0.9rem",
+                          letterSpacing: "0.5px",
+                          color: `${
+                            playerWords.includes(word)
+                              ? "green"
+                              : oppWords.includes(word)
+                              ? "red"
+                              : "black"
+                          }`,
+                        }}
+                      >
+                        {word.toUpperCase()}
+                      </span>
+                    </Col>
+                  ))}
+                </Row>
               </div>
-            ) : waiting === 2 ? (
-              // Random matchmaking screen
-              <div className="text-center">
-                <Spinner animation="border" variant="primary" className="mb-3" />
-                <h5>Looking for an opponent...</h5>
+
+              <div className="text-center mb-4">
+                <p className="mb-2">
+                  <span className="text-dark fw-bold">⬤</span> Not Found
+                  <span className="text-danger fw-bold ms-3">⬤</span> Opponent
+                  Found
+                  <span className="text-success fw-bold ms-3">⬤</span> You Found
+                </p>
               </div>
-            ) : (
-              // Main menu options
-              <>
-                <Button 
-                  variant="success" 
-                  size="lg" 
-                  className="w-100 mb-3 d-flex align-items-center justify-content-center"
-                  onClick={newGame}
+
+              <div className="text-center">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => setState(0)}
+                  className="px-4"
                 >
-                  <Plus className="me-2" size={20} />
-                  Create New Game
+                  Return Home
                 </Button>
-
-                <div className="position-relative my-4">
-                  <hr className="text-muted" />
-                  <span className="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted">
-                    OR
-                  </span>
-                </div>
-
-                <Form className="mb-3">
-                  <InputGroup className="mb-3">
-                    <Form.Control
-                      size="lg"
-                      placeholder="Enter Game Code"
-                      value={enterCode}
-                      onChange={(e) => setEnterCode(e.target.value)}
-                      style={{ borderRight: 'none' }}
-                    />
-                    <Button 
-                      variant="outline-success" 
-                      onClick={joinGame}
-                      className="d-flex align-items-center"
-                    >
-                      <PersonPlus size={20} />
-                    </Button>
-                  </InputGroup>
-                </Form>
-
-                <div className="position-relative my-4">
-                  <hr className="text-muted" />
-                  <span className="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted">
-                    OR
-                  </span>
-                </div>
-
-                <Button 
-                  variant="primary" 
-                  size="lg" 
-                  className="w-100 d-flex align-items-center justify-content-center"
-                  onClick={randomGame}
-                >
-                  <Dice6Fill className="me-2" size={20} />
-                  Random Match!
-                </Button>
-              </>
-            )}
-          </Card.Body>
-        </Card>
-      </Container>
-      :
-      <div className="d-flex flex-column align-items-center justify-content-center vh-100">
-        <h5 style={{textAlign: 'center'}}>Server is starting up give it a moment . . .</h5>
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Container>
+      </>
+    )
+  ) : socketConnected ? (
+    <MainMenu
+      waiting={waiting}
+      gameCode={gameCode}
+      newGame={newGame}
+      enterCode={enterCode}
+      setEnterCode={setEnterCode}
+      randomGame={randomGame}
+      joinGame={joinGame}
+    />
+  ) : (
+    <ServerLoading />
   );
 }
 
