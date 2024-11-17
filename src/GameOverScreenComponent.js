@@ -66,7 +66,7 @@ function GameOverScreen({ playerScore, oppScore, validWords, playerWords, oppWor
                 onClick={() => setState(0)}
                 className="px-4"
               >
-                Return Home
+                RETURN HOME
               </Button>
             </div>
           </Card.Body>

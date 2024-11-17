@@ -320,7 +320,7 @@ function App() {
         </>
       );
     } else {
-      return <SpectatingScreen />
+      return <SpectatingScreen setState={setState} />;
     }
   } else if (socketConnected) {
     return (
