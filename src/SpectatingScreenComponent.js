@@ -43,7 +43,20 @@ const SpectatingScreen = ({ setState }) => {
 
       switch (data.type) {
         case "message":
-          console.log(data);
+          setMessages(prevMessages => {
+            const { topic, message } = data;
+
+            console.log(data);
+
+            return {
+              ...prevMessages,
+              // If topic exists, add to existing array, otherwise create new array
+              [topic]: {
+                live: !message.toLowerCase().includes('game over'),
+                messages: [...(prevMessages[topic]?.messages || []), message]
+              }
+            };
+          });
           break;
         default:
           break;
@@ -62,32 +75,7 @@ const SpectatingScreen = ({ setState }) => {
   }, []);
 
   // Sample messages grouped by topic
-  const [messages] = useState({
-    users: [
-      "New user registration: John Doe",
-      "User profile updated: Jane Smith",
-      "Account deletion: user_123",
-    ],
-    orders: [
-      "Order #12345 processed successfully",
-      "New order received: #12346",
-      "Order #12344 shipped",
-    ],
-    system: [
-      "High CPU usage detected on server-01",
-      "Database backup completed",
-      "Cache cleared successfully",
-    ],
-  });
-
-  const getVariantByTopic = (topic) => {
-    const variants = {
-      users: "primary",
-      orders: "success",
-      system: "warning",
-    };
-    return variants[topic] || "info";
-  };
+  const [messages,setMessages] = useState({});
 
   return spectatingSocketConnected ? (
     <Container className="py-4" style={{ maxWidth: "800px" }}>
@@ -101,7 +89,7 @@ const SpectatingScreen = ({ setState }) => {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Enter your text here..."
+            placeholder="Enter the game room here..."
             required
           />
           <Button type="submit" variant="primary">
@@ -115,14 +103,14 @@ const SpectatingScreen = ({ setState }) => {
             <Accordion.Header>
               <div className="d-flex align-items-center w-100 justify-content-between">
                 <span className="text-capitalize">Game Room {topic}</span>
-                <Badge bg={getVariantByTopic(topic)} className="ms-2">
-                  {topicMessages.length} messages
+                <Badge bg={topicMessages.live ? 'success' : 'warning'} className="ms-2">
+                  {topicMessages.messages.length} messages
                 </Badge>
               </div>
             </Accordion.Header>
             <Accordion.Body className="p-0">
               <ListGroup variant="flush">
-                {topicMessages.map((msg, idx) => (
+                {topicMessages.messages.map((msg, idx) => (
                   <ListGroup.Item
                     key={idx}
                     className="border-bottom"
