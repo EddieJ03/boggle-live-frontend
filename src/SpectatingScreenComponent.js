@@ -6,10 +6,12 @@ import {
   Badge,
   Form,
   Button,
+  ToastContainer,
+  Toast
 } from "react-bootstrap";
 import ServerLoading from "./ServerLoadingComponent.js";
 
-const SpectatingScreen = ({ setState }) => {
+const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, setModalText }) => {
   // initialize WebSocket
   const [spectatingSocket, setSpectatingSocket] = useState(null);
 
@@ -18,15 +20,23 @@ const SpectatingScreen = ({ setState }) => {
     useState(false);
 
   const [inputValue, setInputValue] = useState("");
+  const [submittedTopics, setSubmittedTopics] = useState(new Set()); // Track submitted inputs
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    if (submittedTopics.has(inputValue)) {
+      setModalText("You have already submitted this topic!");
+      setShowA(true);
+      return;
+    }
 
     // Handle the submission here
     spectatingSocket.send(
       JSON.stringify({ type: "newSpectator", topic: inputValue })
     );
 
+    setSubmittedTopics((prev) => new Set(prev).add(inputValue)); // Add the inputValue to the Set
     setInputValue(""); // Clear the input after submission
   };
 
@@ -46,8 +56,6 @@ const SpectatingScreen = ({ setState }) => {
           setMessages(prevMessages => {
             const { topic, message } = data;
 
-            console.log(data);
-
             return {
               ...prevMessages,
               // If topic exists, add to existing array, otherwise create new array
@@ -58,6 +66,10 @@ const SpectatingScreen = ({ setState }) => {
             };
           });
           break;
+        case 'nonexistent':
+          setModalText(`Topic ${data.topic} does not exist!`);
+          setShowA(true);
+          break
         default:
           break;
       }
@@ -79,6 +91,24 @@ const SpectatingScreen = ({ setState }) => {
 
   return spectatingSocketConnected ? (
     <Container className="py-4" style={{ maxWidth: "800px" }}>
+      <ToastContainer
+        style={{ marginTop: "5vh", marginRight: "10px" }}
+        position="top-end"
+      >
+        <Toast
+          bg='danger'
+          show={showA}
+          onClose={toggleShowA}
+          delay={1000}
+          autohide
+        >
+          <Toast.Header></Toast.Header>
+          <Toast.Body>
+            <b>{modalText}</b>
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+
       <h1 className="display-4 mb-3" style={{ color: "#2C3E50" }}>
         Boggle Live Current Games
       </h1>

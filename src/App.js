@@ -320,7 +320,16 @@ function App() {
         </>
       );
     } else {
-      return <SpectatingScreen setState={setState} />;
+      return (
+        <SpectatingScreen
+          setState={setState}
+          showA={showA}
+          setShowA={setShowA}
+          toggleShowA={toggleShowA}
+          modalText={modalText}
+          setModalText={setModalText}
+        />
+      );
     }
   } else if (socketConnected) {
     return (
