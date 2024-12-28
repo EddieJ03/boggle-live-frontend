@@ -75,6 +75,13 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
       }
     };
 
+    newSocket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setSpectatingSocketConnected(false);
+      setModalText("Unable to connect to the spectating server. Please try again later.");
+      setShowA(true);
+    };
+
     newSocket.onclose = () => {
       console.log("Disconnected from spectating websocket");
     };
@@ -168,6 +175,23 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
     </Container>
   ) : (
     <>
+      <ToastContainer
+          style={{ marginTop: "5vh", marginRight: "10px" }}
+          position="top-end"
+        >
+          <Toast
+            bg='danger'
+            show={showA}
+            onClose={toggleShowA}
+            delay={1000}
+            autohide
+          >
+            <Toast.Header></Toast.Header>
+            <Toast.Body>
+              <b>{modalText}</b>
+            </Toast.Body>
+          </Toast>
+        </ToastContainer>
       <ServerLoading />;
     </>
   );
