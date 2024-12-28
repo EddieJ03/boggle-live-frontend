@@ -66,8 +66,8 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
             };
           });
           break;
-        case 'nonexistent':
-          setModalText(`Topic ${data.topic} does not exist!`);
+        case 'error':
+          setModalText(data.message);
           setShowA(true);
           break
         default:
