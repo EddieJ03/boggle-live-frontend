@@ -16,7 +16,7 @@ const MainMenu = ({
   joinGame,
   waiting,
   gameCode,
-  setState
+  setState,
 }) => {
   return (
     <>
@@ -130,6 +130,6 @@ const MainMenu = ({
       </Container>
     </>
   );
-}
+};
 
 export default MainMenu;

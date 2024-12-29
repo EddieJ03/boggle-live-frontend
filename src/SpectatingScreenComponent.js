@@ -7,11 +7,18 @@ import {
   Form,
   Button,
   ToastContainer,
-  Toast
+  Toast,
 } from "react-bootstrap";
 import ServerLoading from "./ServerLoadingComponent.js";
 
-const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, setModalText }) => {
+const SpectatingScreen = ({
+  setState,
+  showA,
+  setShowA,
+  toggleShowA,
+  modalText,
+  setModalText,
+}) => {
   // initialize WebSocket
   const [spectatingSocket, setSpectatingSocket] = useState(null);
 
@@ -41,6 +48,8 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const newSocket = new WebSocket("wss://boggle-live-kafka.onrender.com");
 
     newSocket.onopen = () => {
@@ -53,48 +62,49 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
 
       switch (data.type) {
         case "message":
-          setMessages(prevMessages => {
+          setMessages((prevMessages) => {
             const { topic, message } = data;
 
             return {
               ...prevMessages,
               // If topic exists, add to existing array, otherwise create new array
               [topic]: {
-                live: !message.toLowerCase().includes('game over'),
-                messages: [...(prevMessages[topic]?.messages || []), message]
-              }
+                live: !message.toLowerCase().includes("game over"),
+                messages: [...(prevMessages[topic]?.messages || []), message],
+              },
             };
           });
           break;
-        case 'error':
+        case "error":
           setModalText(data.message);
           setShowA(true);
-          break
+          break;
         default:
           break;
       }
     };
 
     newSocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
       setSpectatingSocketConnected(false);
-      setModalText("Unable to connect to the spectating server. Please try again later.");
-      setShowA(true);
     };
 
     newSocket.onclose = () => {
-      console.log("Disconnected from spectating websocket");
+      if (!isMounted) return;
+
+      alert("ERROR: bad connection with server");
+      setState(0);
     };
 
     setSpectatingSocket(newSocket);
 
     return () => {
+      isMounted = false;
       newSocket.close();
     };
   }, []);
 
   // Sample messages grouped by topic
-  const [messages,setMessages] = useState({});
+  const [messages, setMessages] = useState({});
 
   return spectatingSocketConnected ? (
     <Container className="py-4" style={{ maxWidth: "800px" }}>
@@ -103,7 +113,7 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
         position="top-end"
       >
         <Toast
-          bg='danger'
+          bg="danger"
           show={showA}
           onClose={toggleShowA}
           delay={1000}
@@ -140,7 +150,10 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
             <Accordion.Header>
               <div className="d-flex align-items-center w-100 justify-content-between">
                 <span className="text-capitalize">Game Room {topic}</span>
-                <Badge bg={topicMessages.live ? 'success' : 'warning'} className="ms-2">
+                <Badge
+                  bg={topicMessages.live ? "success" : "warning"}
+                  className="ms-2"
+                >
                   {topicMessages.messages.length} messages
                 </Badge>
               </div>
@@ -176,22 +189,22 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
   ) : (
     <>
       <ToastContainer
-          style={{ marginTop: "5vh", marginRight: "10px" }}
-          position="top-end"
+        style={{ marginTop: "5vh", marginRight: "10px" }}
+        position="top-end"
+      >
+        <Toast
+          bg="danger"
+          show={showA}
+          onClose={toggleShowA}
+          delay={1000}
+          autohide
         >
-          <Toast
-            bg='danger'
-            show={showA}
-            onClose={toggleShowA}
-            delay={1000}
-            autohide
-          >
-            <Toast.Header></Toast.Header>
-            <Toast.Body>
-              <b>{modalText}</b>
-            </Toast.Body>
-          </Toast>
-        </ToastContainer>
+          <Toast.Header></Toast.Header>
+          <Toast.Body>
+            <b>{modalText}</b>
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
       <ServerLoading />;
     </>
   );

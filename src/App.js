@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import GameScreen from "./GameScreenComponent.js";
 import GameOverScreen from "./GameOverScreenComponent.js";
 import ServerLoading from "./ServerLoadingComponent.js";
@@ -8,6 +8,8 @@ import "./App.css";
 
 const NUM = 4;
 const PLAYER_TIME_LEFT = 15;
+const RECONNECT_DELAY = 3000;
+
 let playerNumber = 0;
 let validWords = [],
   playerWords = [],
@@ -19,6 +21,7 @@ function App() {
 
   // did we actually connect to the websocket yet?
   const [socketConnected, setSocketConnected] = useState(false);
+  const reconnectTimeoutRef = useRef(null);
 
   // 0 is home, 1 is playing, 2 is game results, 3 is disconnected, 4 is spectating mode
   const [state, setState] = useState(0);
@@ -97,25 +100,25 @@ function App() {
     }
   }, [playerTimeLeft, turn, state, socket, playerScore]);
 
-  useEffect(() => {
-    // initialize client socket
+  // establish web socket connection then return the websocket object
+  const connectWebSocket = () => {
     const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
 
     newSocket.onopen = () => {
-      setSocketConnected(true);
       console.log("Connected to WebSocket server");
+      setSocketConnected(true);
     };
 
     newSocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
       switch (data.type) {
-        case 'unknownGame':
-          alert('This game room does not exist')
-          break
-        case 'tooManyPlayers':
-          alert('Already too many players in this game')
-          break
+        case "unknownGame":
+          alert("This game room does not exist");
+          break;
+        case "tooManyPlayers":
+          alert("Already too many players in this game");
+          break;
         case "randomWaiting":
           setGameCode(data.roomName);
           setWaiting(2);
@@ -166,12 +169,40 @@ function App() {
     };
 
     newSocket.onclose = () => {
-      console.log("Disconnected from WebSocket server");
+      setSocketConnected(false);
+      setState(0);
+      setWaiting(0);
+
+      console.log(
+        `WebSocket disconnected. Attempting reconnect in ${
+          RECONNECT_DELAY / 1000
+        } seconds...`
+      );
+
+      // Clear any existing timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
+      // Set new timeout for reconnection
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connectWebSocket();
+      }, RECONNECT_DELAY);
     };
 
     setSocket(newSocket);
 
+    return newSocket;
+  };
+
+  useEffect(() => {
+    const newSocket = connectWebSocket();
+
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
       newSocket.close();
     };
   }, []);
