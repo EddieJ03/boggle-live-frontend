@@ -99,7 +99,7 @@ function App() {
 
   useEffect(() => {
     // initialize client socket
-    const newSocket = new WebSocket("ws://localhost:5000");
+    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
 
     newSocket.onopen = () => {
       setSocketConnected(true);
@@ -110,6 +110,12 @@ function App() {
       const data = JSON.parse(event.data);
 
       switch (data.type) {
+        case 'unknownGame':
+          alert('This game room does not exist')
+          break
+        case 'tooManyPlayers':
+          alert('Already too many players in this game')
+          break
         case "randomWaiting":
           setGameCode(data.roomName);
           setWaiting(2);

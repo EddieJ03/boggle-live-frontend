@@ -41,7 +41,7 @@ const SpectatingScreen = ({ setState, showA, setShowA, toggleShowA, modalText, s
   };
 
   useEffect(() => {
-    const newSocket = new WebSocket("ws://localhost:8080");
+    const newSocket = new WebSocket("wss://boggle-live-kafka.onrender.com");
 
     newSocket.onopen = () => {
       setSpectatingSocketConnected(true);
