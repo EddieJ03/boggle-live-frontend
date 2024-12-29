@@ -1,7 +1,13 @@
 import { Container, Card, Button, Col, Row } from "react-bootstrap";
 
-
-function GameOverScreen({ playerScore, oppScore, validWords, playerWords, oppWords, setState }) {
+function GameOverScreen({
+  playerScore,
+  oppScore,
+  validWords,
+  playerWords,
+  oppWords,
+  setState,
+}) {
   return (
     <>
       <Container className="min-vh-100 d-flex flex-column justify-content-center align-items-center py-4">

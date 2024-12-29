@@ -19,7 +19,7 @@ function GameScreen({
   playerTimeLeft,
   showA,
   toggleShowA,
-  maxPossibleScore
+  maxPossibleScore,
 }) {
   return (
     <>

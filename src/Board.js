@@ -11,9 +11,11 @@ function Board({
 }) {
   useEffect(() => {
     let newWord = "";
+    
     pairsMarked.forEach(
       (item) => (newWord = newWord + characters[item[0] * 4 + item[1]])
     );
+
     setWord(newWord);
   }, [pairsMarked]);
 
