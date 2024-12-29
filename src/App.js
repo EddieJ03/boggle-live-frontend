@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import ToastContainer from "react-bootstrap/ToastContainer";
-import Toast from "react-bootstrap/Toast";
-import { Container, Card, Button, Col, Row } from "react-bootstrap";
-import Board from "./Board.js";
+import GameScreen from "./GameScreenComponent.js";
+import GameOverScreen from "./GameOverScreenComponent.js";
 import ServerLoading from "./ServerLoadingComponent.js";
 import MainMenu from "./MainMenuComponent.js";
+import SpectatingScreen from "./SpectatingScreenComponent.js";
 import "./App.css";
 
 const NUM = 4;
@@ -21,7 +20,7 @@ function App() {
   // did we actually connect to the websocket yet?
   const [socketConnected, setSocketConnected] = useState(false);
 
-  // 0 is home, 1 is playing, 2 is game results, 3 is disconnected
+  // 0 is home, 1 is playing, 2 is game results, 3 is disconnected, 4 is spectating mode
   const [state, setState] = useState(0);
 
   const [gameCode, setGameCode] = useState("");
@@ -30,10 +29,7 @@ function App() {
   // track player turn
   const [turn, setTurn] = useState(false);
 
-  // waiting for other player
-  // 0 for no waiting
-  // 1 for new game
-  // 2 for random
+  // 0 is home, 1 is playing, 2 is game results, 3 is disconnected
   const [waiting, setWaiting] = useState(0);
 
   // characters on board
@@ -114,6 +110,12 @@ function App() {
       const data = JSON.parse(event.data);
 
       switch (data.type) {
+        case 'unknownGame':
+          alert('This game room does not exist')
+          break
+        case 'tooManyPlayers':
+          alert('Already too many players in this game')
+          break
         case "randomWaiting":
           setGameCode(data.roomName);
           setWaiting(2);
@@ -274,179 +276,83 @@ function App() {
     setPlayerTimeLeft(PLAYER_TIME_LEFT);
   }
 
-  return state !== 0 ? (
-    state === 1 ? (
-      <>
-        <div className="d-flex flex-column justify-content-center align-items-center">
-          <h1 className="mb-1">{turn ? `${playerTimeLeft}` : ""}</h1>
-
-          <h4 style={{ float: "right", marginTop: "5px" }}>
-            Score: {playerScore}
-          </h4>
-
-          <h4 style={{ float: "right", marginTop: "5px" }}>WORD: {word}</h4>
-
-          <Board
-            player={turn}
-            characters={characters}
-            booleanMarked={booleanMarked}
-            setBooleanMarked={setBooleanMarked}
-            setWord={setWord}
-            pairsMarked={pairsMarked}
-            setPairsMarked={setPairsMarked}
-          />
-
-          <div
-            className="d-flex align-content-start flex-wrap"
-            style={{
-              height: "200px",
-              width: "400px",
-              border: "5px solid black",
-              marginBottom: "5px",
-            }}
-          >
-            {playerWords.map((word, val) => (
-              <p key={val} style={{ margin: "2px" }}>
-                {word.toUpperCase()}
-              </p>
-            ))}
+  if (state !== 0) {
+    if (state === 1) {
+      return (
+        <GameScreen
+          modalText={modalText}
+          clear={clear}
+          turn={turn}
+          submitWord={submitWord}
+          playerWords={playerWords}
+          word={word}
+          characters={characters}
+          booleanMarked={booleanMarked}
+          setBooleanMarked={setBooleanMarked}
+          setWord={setWord}
+          pairsMarked={pairsMarked}
+          setPairsMarked={setPairsMarked}
+          playerScore={playerScore}
+          playerTimeLeft={playerTimeLeft}
+          showA={showA}
+          toggleShowA={toggleShowA}
+          maxPossibleScore={maxPossibleScore}
+        />
+      );
+    } else if (state === 2) {
+      return (
+        <GameOverScreen
+          playerScore={playerScore}
+          oppScore={oppScore}
+          validWords={validWords}
+          playerWords={playerWords}
+          oppWords={oppWords}
+          setState={setState}
+        />
+      );
+    } else if (state === 3) {
+      return (
+        <>
+          <div className="d-flex flex-column justify-content-center align-items-center vh-100">
+            <h2 style={{ textAlign: "center" }}>Opponent Disconnected!</h2>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setState(0)}
+            >
+              Home
+            </button>
           </div>
-
-          <button
-            onClick={clear}
-            className={`btn btn-secondary ${!turn ? "disabled" : ""} mb-1`}
-          >
-            Clear
-          </button>
-
-          <button
-            type="button"
-            className={`btn btn-secondary ${!turn ? "disabled" : ""}`}
-            onClick={submitWord}
-          >
-            Select Word
-          </button>
-
-          <h4 style={{ textAlign: "center", marginTop: "15px" }}>
-            Total Possible Score: {maxPossibleScore}
-          </h4>
-        </div>
-        <ToastContainer
-          style={{ marginTop: "12vh", marginRight: "10px" }}
-          position="top-end"
-        >
-          <Toast
-            bg={modalText === "Good Selection!" ? "success" : "danger"}
-            show={showA}
-            onClose={toggleShowA}
-            delay={1000}
-            autohide
-          >
-            <Toast.Header></Toast.Header>
-            <Toast.Body>
-              <b>{modalText}</b>
-            </Toast.Body>
-          </Toast>
-        </ToastContainer>
-      </>
-    ) : state !== 2 ? (
-      <>
-        <div className="d-flex flex-column justify-content-center align-items-center vh-100">
-          <h2 style={{ textAlign: "center" }}>Opponent Disconnected!</h2>
-          <button
-            type="button"
-            className={`btn btn-secondary`}
-            onClick={() => setState(0)}
-          >
-            Home
-          </button>
-        </div>
-      </>
-    ) : (
-      <>
-        <Container className="min-vh-100 d-flex flex-column justify-content-center align-items-center py-4">
-          <Card className="shadow-lg w-100" style={{ maxWidth: "700px" }}>
-            <Card.Header className="text-center bg-primary text-white">
-              <h2 className="mb-0">
-                {playerScore > oppScore
-                  ? `You Win!`
-                  : playerScore < oppScore
-                  ? `You Lose`
-                  : "It is a tie!"}
-              </h2>
-            </Card.Header>
-
-            <Card.Body>
-              <div
-                className="border rounded p-3 mb-4"
-                style={{
-                  height: "250px",
-                  overflowY: "auto",
-                  backgroundColor: "#fafafa",
-                }}
-              >
-                <Row className="g-2">
-                  {validWords.map((word, index) => (
-                    <Col key={index} xs="auto">
-                      <span
-                        className={`px-2 py-1 d-inline-block`}
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "0.9rem",
-                          letterSpacing: "0.5px",
-                          color: `${
-                            playerWords.includes(word)
-                              ? "green"
-                              : oppWords.includes(word)
-                              ? "red"
-                              : "black"
-                          }`,
-                        }}
-                      >
-                        {word.toUpperCase()}
-                      </span>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
-
-              <div className="text-center mb-4">
-                <p className="mb-2">
-                  <span className="text-dark fw-bold">⬤</span> Not Found
-                  <span className="text-danger fw-bold ms-3">⬤</span> Opponent
-                  Found
-                  <span className="text-success fw-bold ms-3">⬤</span> You Found
-                </p>
-              </div>
-
-              <div className="text-center">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={() => setState(0)}
-                  className="px-4"
-                >
-                  Return Home
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Container>
-      </>
-    )
-  ) : socketConnected ? (
-    <MainMenu
-      waiting={waiting}
-      gameCode={gameCode}
-      newGame={newGame}
-      enterCode={enterCode}
-      setEnterCode={setEnterCode}
-      randomGame={randomGame}
-      joinGame={joinGame}
-    />
-  ) : (
-    <ServerLoading />
-  );
+        </>
+      );
+    } else {
+      return (
+        <SpectatingScreen
+          setState={setState}
+          showA={showA}
+          setShowA={setShowA}
+          toggleShowA={toggleShowA}
+          modalText={modalText}
+          setModalText={setModalText}
+        />
+      );
+    }
+  } else if (socketConnected) {
+    return (
+      <MainMenu
+        waiting={waiting}
+        gameCode={gameCode}
+        newGame={newGame}
+        enterCode={enterCode}
+        setEnterCode={setEnterCode}
+        randomGame={randomGame}
+        joinGame={joinGame}
+        setState={setState}
+      />
+    );
+  } else {
+    return <ServerLoading />;
+  }
 }
 
 export default App;

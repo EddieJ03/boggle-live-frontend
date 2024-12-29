@@ -6,9 +6,9 @@ import {
   Card,
   Spinner,
 } from "react-bootstrap";
-import { PersonPlus, Dice6Fill, Plus } from "react-bootstrap-icons";
+import { PersonPlus, Dice6Fill, Plus, EyeFill } from "react-bootstrap-icons";
 
-function MainMenu({
+const MainMenu = ({
   newGame,
   enterCode,
   setEnterCode,
@@ -16,7 +16,8 @@ function MainMenu({
   joinGame,
   waiting,
   gameCode,
-}) {
+  setState
+}) => {
   return (
     <>
       <Container className="d-flex align-items-center justify-content-center min-vh-100">
@@ -112,6 +113,15 @@ function MainMenu({
                 >
                   <Dice6Fill className="me-2" size={20} />
                   Random Match!
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="w-100 d-flex align-items-center justify-content-center mt-1"
+                  onClick={() => setState(4)}
+                >
+                  <EyeFill className="me-2" size={20} />
+                  Spectate!
                 </Button>
               </>
             )}
