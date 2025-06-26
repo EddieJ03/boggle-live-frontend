@@ -102,7 +102,7 @@ function App() {
 
   // establish web socket connection then return the websocket object
   const connectWebSocket = () => {
-    const newSocket = new WebSocket("wss://boggle-live-backend.onrender.com");
+    const newSocket = new WebSocket("wss://boggle-live.onrender.com");
 
     newSocket.onopen = () => {
       console.log("Connected to WebSocket server");
