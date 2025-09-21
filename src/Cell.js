@@ -52,9 +52,18 @@ function Cell({
           booleanMarked[Math.trunc(value / booleanMarked.length)][value % booleanMarked.length]
             ? "blue"
             : `hsl(0, 0%, 90%)`,
+        borderRadius: "8px",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+        padding: "12px 0",
+        fontSize: "1.3rem",
+        textAlign: "center",
+        cursor: player ? "pointer" : "default",
+        transition: "background 0.2s, box-shadow 0.2s",
       }}
       ref={cell}
       onClick={click}
+      onMouseOver={e => { if (player) e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)"; }}
+      onMouseOut={e => { if (player) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.08)"; }}
     >
       <span className="letter">{letter}</span>
     </li>

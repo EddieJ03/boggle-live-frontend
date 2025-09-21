@@ -42,6 +42,24 @@ function GameScreen({
           setPairsMarked={setPairsMarked}
         />
 
+        <div className="d-flex flex-row mb-2 justify-content-between">
+          <button
+            onClick={clear}
+            className={`btn btn-secondary ${!turn ? "disabled" : ""}`}
+            style={{ marginRight: "10px" }}
+          >
+            Clear
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-secondary ${!turn ? "disabled" : ""}`}
+            onClick={submitWord}
+          >
+            Select Word
+          </button>
+        </div>
+
         <div
           className="d-flex align-content-start flex-wrap"
           style={{
@@ -57,21 +75,6 @@ function GameScreen({
             </p>
           ))}
         </div>
-
-        <button
-          onClick={clear}
-          className={`btn btn-secondary ${!turn ? "disabled" : ""} mb-1`}
-        >
-          Clear
-        </button>
-
-        <button
-          type="button"
-          className={`btn btn-secondary ${!turn ? "disabled" : ""}`}
-          onClick={submitWord}
-        >
-          Select Word
-        </button>
 
         <h4 style={{ textAlign: "center", marginTop: "15px" }}>
           Total Possible Score: {maxPossibleScore}
